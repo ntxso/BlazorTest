@@ -1,0 +1,67 @@
+﻿@page "/login"
+@using System.ComponentModel.DataAnnotations
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+<h3>Giriş Yap</h3>
+
+<EditForm Model="@Model" OnValidSubmit="HandleSubmit" FormName="sdfsdfs_sdf">
+    <AntiforgeryToken />
+    <DataAnnotationsValidator />
+
+    <div class="mb-3">
+        <label>Kullanıcı Adı:</label>
+        <InputText @bind-Value="Model.Username" class="form-control" />
+        <ValidationMessage For="@(() => Model.Username)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Şifre:</label>
+        <InputText @bind-Value="Model.Password" type="password" class="form-control" />
+        <ValidationMessage For="@(() => Model.Password)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Giriş Yap</button>
+</EditForm>
+
+<div style="background:yellow;padding:10px;margin-top:20px;">
+    <b>DEBUG:</b><br>
+    Username: '@Model.Username'<br>
+    Password: '@Model.Password'<br>
+    Doğru mu? @(Model.Username == "admin" && Model.Password == "1234")
+</div>
+
+@code {
+    private LoginModel Model { get; set; } = new();
+
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine($"GİRİŞ DENEMESİ: {Model.Username} / {Model.Password}");
+        await JSRuntime.InvokeVoidAsync("console.log", $"GİRİŞ: {Model.Username} / {Model.Password}");
+
+        if (Model.Username == "admin" && Model.Password == "1234")
+        {
+            Console.WriteLine("GİRİŞ BAŞARILI!");
+
+            // FakeAuthStateProvider'a cast ederek login işlemi
+            var fakeProvider = (FakeAuthStateProvider)AuthStateProvider;
+            await fakeProvider.LoginAsync(Model.Username, "Admin");
+
+            Nav.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            Console.WriteLine("GİRİŞ BAŞARISIZ!");
+        }
+    }
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "Kullanıcı adı zorunlu")]
+        public string Username { get; set; } = "";
+
+        [Required(ErrorMessage = "Şifre zorunlu")]
+        public string Password { get; set; } = "";
+    }
+}

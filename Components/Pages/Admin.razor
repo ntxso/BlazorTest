@@ -1,0 +1,18 @@
+﻿@page "/admin"
+@attribute [Authorize(Roles = "Admin")]
+@inject FakeAuthStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<h3>Admin Paneli</h3>
+
+<p>Hoş geldin, admin!</p>
+
+<button class="btn btn-danger" @onclick="Logout">Çıkış Yap</button>
+
+@code {
+    private async Task Logout()
+    {
+        await AuthStateProvider.LogoutAsync();
+        Nav.NavigateTo("/login");
+    }
+}
