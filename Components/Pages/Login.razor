@@ -4,64 +4,111 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject IJSRuntime JSRuntime
 
-<h3>Giriş Yap</h3>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="text-center">Giriş Yap</h3>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="needs-validation" FormName="sdfs_ddf">
+                        <DataAnnotationsValidator />
 
-<EditForm Model="@Model" OnValidSubmit="HandleSubmit" FormName="sdfsdfs_sdf">
-    <AntiforgeryToken />
-    <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Kullanıcı Adı:</label>
+                            <InputText id="username" @bind-Value="loginModel.Username" class="form-control" />
+                            <ValidationMessage For="@(() => loginModel.Username)" class="text-danger" />
+                        </div>
 
-    <div class="mb-3">
-        <label>Kullanıcı Adı:</label>
-        <InputText @bind-Value="Model.Username" class="form-control" />
-        <ValidationMessage For="@(() => Model.Username)" />
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre:</label>
+                            <InputText id="password" @bind-Value="loginModel.Password" type="password" class="form-control" />
+                            <ValidationMessage For="@(() => loginModel.Password)" class="text-danger" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+                    </EditForm>
+
+                    @if (!string.IsNullOrEmpty(message))
+                    {
+                        <div class="alert alert-info mt-3">@message</div>
+                    }
+
+                    <!-- Debug Info -->
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6>Debug Bilgisi:</h6>
+                        <p><strong>Username:</strong> @loginModel.Username</p>
+                        <p><strong>Password:</strong> @loginModel.Password</p>
+                        <p><strong>Doğru mu?</strong> @(loginModel.Username == "admin" && loginModel.Password == "1234")</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="mb-3">
-        <label>Şifre:</label>
-        <InputText @bind-Value="Model.Password" type="password" class="form-control" />
-        <ValidationMessage For="@(() => Model.Password)" />
-    </div>
-
-    <button type="submit" class="btn btn-primary">Giriş Yap</button>
-</EditForm>
-
-<div style="background:yellow;padding:10px;margin-top:20px;">
-    <b>DEBUG:</b><br>
-    Username: '@Model.Username'<br>
-    Password: '@Model.Password'<br>
-    Doğru mu? @(Model.Username == "admin" && Model.Password == "1234")
 </div>
 
 @code {
-    private LoginModel Model { get; set; } = new();
+    private LoginModel loginModel = new();
+    private string message = "";
+    private bool isInitialized = false;
 
-    private async Task HandleSubmit()
+    protected override void OnInitialized()
     {
-        Console.WriteLine($"GİRİŞ DENEMESİ: {Model.Username} / {Model.Password}");
-        await JSRuntime.InvokeVoidAsync("console.log", $"GİRİŞ: {Model.Username} / {Model.Password}");
+        // Sadece sunucu tarafı işlemler burada
+        Console.WriteLine("Login component initialized");
+    }
 
-        if (Model.Username == "admin" && Model.Password == "1234")
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            Console.WriteLine("GİRİŞ BAŞARILI!");
+            // JavaScript çağrıları sadece burada!
+            await JSRuntime.InvokeVoidAsync("console.log", "Login component tarayıcıda render edildi");
+            isInitialized = true;
+        }
+    }
 
-            // FakeAuthStateProvider'a cast ederek login işlemi
+    private async Task HandleLogin()
+    {
+        // Debug için konsola yaz - JS olmadan
+        Console.WriteLine($"SERVER: Giriş denemesi - {loginModel.Username} / {loginModel.Password}");
+
+        // Eğer JS kullanmak istiyorsak, önce component'in hazır olduğundan emin ol
+        if (isInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("console.log",
+                $"Form Submit: {loginModel.Username} / {loginModel.Password}");
+        }
+
+        if (loginModel.Username == "admin" && loginModel.Password == "1234")
+        {
+            message = "Giriş başarılı! Yönlendiriliyorsunuz...";
+
+            // Authentication state'i güncelle
             var fakeProvider = (FakeAuthStateProvider)AuthStateProvider;
-            await fakeProvider.LoginAsync(Model.Username, "Admin");
+            await fakeProvider.LoginAsync(loginModel.Username, "Admin");
 
+            // Kullanıcı mesajı görebilsin diye kısa bekleme
+            await Task.Delay(1500);
             Nav.NavigateTo("/", forceLoad: true);
         }
         else
         {
-            Console.WriteLine("GİRİŞ BAŞARISIZ!");
+            message = "Hatalı kullanıcı adı veya şifre!";
+            loginModel.Password = ""; // Şifreyi temizle
+            StateHasChanged(); // UI'ı güncelle
         }
     }
 
     public class LoginModel
     {
-        [Required(ErrorMessage = "Kullanıcı adı zorunlu")]
+        [Required(ErrorMessage = "Kullanıcı adı zorunludur")]
+        [StringLength(20, ErrorMessage = "Kullanıcı adı çok uzun")]
         public string Username { get; set; } = "";
 
-        [Required(ErrorMessage = "Şifre zorunlu")]
+        [Required(ErrorMessage = "Şifre zorunludur")]
+        [MinLength(3, ErrorMessage = "Şifre en az 3 karakter olmalı")]
         public string Password { get; set; } = "";
     }
 }

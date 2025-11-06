@@ -1,20 +1,35 @@
 ﻿@inherits LayoutComponentBase
-@inject FakeAuthStateProvider AuthStateProvide
+@inject FakeAuthStateProvider AuthStateProvider
 <CascadingAuthenticationState>
 <div class="page">
     <div class="sidebar">
         <NavMenu />
     </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        <main>
+            <div class="top-row px-4 bg-primary text-white">
+                <div class="d-flex justify-content-between w-100">
+                    <div>
+                        <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
+                    </div>
+                    <div>
+                        <AuthorizeView>
+                            <Authorized>
+                                <span>Merhaba, @context.User.Identity.Name!</span>
+                                <a href="/logout" class="text-white ms-3" @onclick="Logout">Çıkış</a>
+                            </Authorized>
+                            <NotAuthorized>
+                                <a href="/login" class="text-white">Giriş Yap</a>
+                            </NotAuthorized>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            </div>
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -23,3 +38,10 @@
     <span class="dismiss">🗙</span>
 </div>
 </CascadingAuthenticationState>
+@code {
+    private async Task Logout()
+    {
+        var fakeProvider = (FakeAuthStateProvider)AuthStateProvider;
+        await fakeProvider.LogoutAsync();
+    }
+}

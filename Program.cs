@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Authentication servisleri - DOÐRU ÞEKÝLDE KAYIT
+// Authentication servisleri - .NET 9 style
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<FakeAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
